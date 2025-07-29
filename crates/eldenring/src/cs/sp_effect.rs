@@ -44,8 +44,8 @@ pub struct SpecialEffectEntry {
     /// The previous param entry in the doubly linked list.
     previous: Option<NonNull<SpecialEffectEntry>>,
     /// Time to go until the speffect is removed.
-    pub removal_timer: f32,
     unk_removal_timer: f32,
+    pub removal_timer: f32,
     /// How long it takes the speffect before removing itself.
     pub duration: f32,
     pub interval_timer: f32,
