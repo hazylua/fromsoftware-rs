@@ -28,6 +28,24 @@ impl SpecialEffect {
             ret
         })
     }
+
+    
+    // -----------------------------------------------------------------
+    // I didn't test this to see if it actually works the way that I'm thinking it
+    // does but I didn't want to discard it so I'll just leave it here lol
+    // -----------------------------------------------------------------
+    pub fn mut_entries(&mut self) -> impl Iterator<Item = &mut SpecialEffectEntry> {
+        let mut current = self.head.as_ref().map(|mut e| e.as_ptr());
+        std::iter::from_fn(move || {
+            let entry = current.and_then(|c| unsafe { c.as_mut() });
+            if let Some(entry) = entry {
+                current = unsafe { entry.next.map(|e| e.as_ptr()) };
+                Some(entry)
+            } else {
+                None
+            }
+        })
+    }
 }
 
 #[repr(C)]
