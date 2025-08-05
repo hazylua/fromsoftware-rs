@@ -1,8 +1,7 @@
 use std::ptr::NonNull;
 
-use shared::OwnedPtr;
-
 use super::ChrIns;
+use shared::OwnedPtr;
 
 #[repr(C)]
 /// Manages speffects for an entity.
@@ -17,6 +16,19 @@ pub struct SpecialEffect {
     unk20: [u8; 0x118],
 }
 
+type AddSpeffectFunction = unsafe extern "C" fn(player_ins: *mut u8, speffect_id: u32, param3: i32);
+
+static ADD_SPEFFECT_FUNCTION: once_cell::sync::Lazy<Option<AddSpeffectFunction>> =
+    once_cell::sync::Lazy::new(|| unsafe {
+        use skidscan::signature;
+        signature!(
+        "48 8B C4 48 89 58 08 48 89 70 10 57 48 81 EC ?? ?? ?? ?? 0F 28 05 ?? ?? ?? ?? 48 8B F1 0F 28 0D ?? ?? ?? ?? 48 8D 48 88"
+    )
+        .scan_module("eldenring.exe")
+        .ok()
+        .map(|ptr| unsafe { std::mem::transmute(ptr) })
+    });
+
 impl SpecialEffect {
     /// Yields an iterator over all the SpEffect entries contained in this SpecialEffect instance.
     pub fn entries(&self) -> impl Iterator<Item = &SpecialEffectEntry> {
@@ -29,7 +41,21 @@ impl SpecialEffect {
         })
     }
 
-    
+    pub unsafe fn add_speffect(&self, sp_effect_id: u32, player_index: u8) {
+        let player_ptr = self.owner.as_ptr() as *mut u8;
+
+        if player_ptr.is_null() {
+            eprintln!("Player pointer is null");
+            return;
+        }
+
+        let Some(func) = *ADD_SPEFFECT_FUNCTION else {
+            eprintln!("AddSpeffectFunction is not initialized");
+            return;
+        };
+
+        func(player_ptr, sp_effect_id, player_index as i32);
+    }
 }
 
 #[repr(C)]
